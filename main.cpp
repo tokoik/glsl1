@@ -1,18 +1,25 @@
-#define _CRT_SECURE_NO_WARNINGS
+#if defined(__APPLE__)
+#  define GL_SILENCE_DEPRECATION
+#  include <GLUT/glut.h>
+#  include <OpenGL/glext.h>
+#else
+#  if defined(_MSC_VER)
+//#    pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
+#    define _USE_MATH_DEFINES
+#    define _CRT_SECURE_NO_WARNINGS
+#  endif
+#  include <GL/glut.h>
+#  include <GL/glext.h>
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
 
-#if defined(WIN32)
-//#  pragma comment(linker, "/subsystem:\"windows\" /entry:\"mainCRTStartup\"")
-#  include "glut.h"
-#  include "glext.h"
-#elif defined(__APPLE__) || defined(MACOSX)
-#  include <GLUT/glut.h>
-#else
-#  define GL_GLEXT_PROTOTYPES
-#  include <GL/glut.h>
-#endif
+/* トラックボール処理用関数の宣言 */
+#include "trackball.h"
+
+/* 1 ならティーポットを描く */
+#define DRAW_TEAPOT 0
 
 /*
 ** 光源
@@ -32,11 +39,8 @@ static GLuint gl2Program;
 /*
 ** 初期化
 */
-static void init(void)
+static void init()
 {
-  /* シェーダプログラムのコンパイル／リンク結果を得る変数 */
-  GLint compiled, linked;
-
   /* 初期設定 */
   glClearColor(0.3f, 0.3f, 1.0f, 0.0f);
   glEnable(GL_DEPTH_TEST);
@@ -60,6 +64,9 @@ static void init(void)
   /* シェーダのソースプログラムの読み込み */
   if (readShaderSource(vertShader, "simple.vert")) exit(1);
   if (readShaderSource(fragShader, "simple.frag")) exit(1);
+
+  /* シェーダプログラムのコンパイル結果 */
+  GLint compiled;
 
   /* バーテックスシェーダのソースプログラムのコンパイル */
   glCompileShader(vertShader);
@@ -90,6 +97,9 @@ static void init(void)
   glDeleteShader(vertShader);
   glDeleteShader(fragShader);
 
+  /* シェーダプログラムのリンク結果 */
+  GLint linked;
+
   /* シェーダプログラムのリンク */
   glLinkProgram(gl2Program);
   glGetProgramiv(gl2Program, GL_LINK_STATUS, &linked);
@@ -106,7 +116,7 @@ static void init(void)
 /*
 ** シーンの描画
 */
-static void scene(void)
+static void scene()
 {
   static const GLfloat diffuse[] = { 0.6f, 0.1f, 0.1f, 1.0f };
   static const GLfloat specular[] = { 0.3f, 0.3f, 0.3f, 1.0f };
@@ -116,7 +126,10 @@ static void scene(void)
   glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, specular);
   glMaterialf(GL_FRONT_AND_BACK, GL_SHININESS, 100.0f);
 
-#if 1
+#if DRAW_TEAPOT
+  /* ティーポットを描く */
+  glutSolidTeapot(1.0);
+#else
   /* １枚の４角形を描く */
   glNormal3d(0.0, 0.0, 1.0);
   glBegin(GL_QUADS);
@@ -125,27 +138,18 @@ static void scene(void)
   glVertex3d( 1.0,  1.0,  0.0);
   glVertex3d(-1.0,  1.0,  0.0);
   glEnd();
-#else
-  glutSolidTeapot(1.0);
 #endif
 }
-
 
 /****************************
 ** GLUT のコールバック関数 **
 ****************************/
 
-/* トラックボール処理用関数の宣言 */
-#include "trackball.h"
-
-static void display(void)
+static void display()
 {
-  /* モデルビュー変換行列の初期化 */
+  /* モデルビュー変換行列の設定 */
   glMatrixMode(GL_MODELVIEW);
   glLoadIdentity();
-
-  /* 画面クリア */
-  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   /* 光源の位置を設定 */
   glLightfv(GL_LIGHT0, GL_POSITION, lightpos);
@@ -153,8 +157,11 @@ static void display(void)
   /* 視点の移動（物体の方を奥に移動）*/
   glTranslated(0.0, 0.0, -3.0);
 
-  /* トラックボール処理による回転 */
+  /* トラックボール処理で図形を回転 */
   glMultMatrixd(trackballRotation());
+
+  /* 画面クリア */
+  glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
   /* シーンの描画 */
   scene();
@@ -176,10 +183,10 @@ static void resize(int w, int h)
 
   /* 透視変換行列の初期化 */
   glLoadIdentity();
-  gluPerspective(60.0, (double)w / (double)h, 1.0, 100.0);
+  gluPerspective(60.0, (double)w / (double)h, 0.1, 10.0);
 }
 
-static void idle(void)
+static void idle()
 {
   /* 画面の描き替え */
   glutPostRedisplay();
@@ -231,7 +238,7 @@ static void keyboard(unsigned char key, int x, int y)
 /*
 ** メインプログラム
 */
-int main(int argc, char *argv[])
+int main(int argc, char* argv[])
 {
   glutInit(&argc, argv);
   glutInitDisplayMode(GLUT_RGBA | GLUT_DEPTH | GLUT_DOUBLE);
