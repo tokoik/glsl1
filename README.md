@@ -199,7 +199,7 @@ GLSL でシェーダプログラムを利用する手順は以下の通りです
 #version 120
 // simple.vert
 
-void main(void)
+void main()
 {
   // 頂点位置の変換計算
   gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
@@ -214,7 +214,7 @@ void main(void)
 #version 120
 // simple.frag
 
-void main (void)
+void main ()
 {
   // フラグメントの色を固定で赤（R: 1.0, G: 0.0, B: 0.0, A: 1.0）にする
   gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
