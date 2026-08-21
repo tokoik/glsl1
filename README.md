@@ -2,7 +2,7 @@
 
 ## 1. 概要
 
-このプログラムは、OpenGL における「テクスチャマッピング (Texture Mapping)」の基礎を学ぶための、学生向けのサンプルプログラムです。本プログラムは、以下のブログ記事の解説に沿って学習を進めるための雛形として提供されています。
+このプログラムは、OpenGL における「プログラマブルシェーダ (Programmable Shader)」および「GLSL (OpenGL Shading Language)」によるシェーダプログラムの読み込みの基礎を学ぶための、学生向けのサンプルプログラムです。本プログラムは、以下のブログ記事の解説に従って[雛形プログラム](https://github.com/tokoik/glsl0)を書き換えたものです。
 
 - [第１回 シェーダプログラムの読み込み](https://tokoik.github.io/blog/glsl%20%E5%85%A5%E9%96%80/2005/10/06/glsl.html)
 
@@ -189,7 +189,7 @@ GLSL でシェーダプログラムを利用する手順は以下の通りです
 
 #### 1. バーテックスシェーダ ([simple.vert](https://github.com/tokoik/glsl1/blob/main/simple.vert))
 
-頂点ごとに実行されます。入力された頂点の座標値 `gl_Vertex` に、モデルビュー変換行列と透視変換行列の積 `gl_ModelViewProjectionMatrix` を掛け合わせ、最終的なスクリーン座標である `gl_Position` に出力します。
+頂点ごとに実行されます。組み込み関数 `ftransform()` は、入力された頂点の座標値 `gl_Vertex` にモデルビュー変換行列と透視変換行列の積 `gl_ModelViewProjectionMatrix` を掛けたものと同じ結果、すなわち頂点のクリッピング座標値を求めます。これを `gl_Position` に出力します。
 
 ```glsl
 #version 120
@@ -198,8 +198,8 @@ GLSL でシェーダプログラムを利用する手順は以下の通りです
 
 void main()
 {
-  // 頂点位置の変換計算
-  gl_Position = gl_ModelViewProjectionMatrix * gl_Vertex;
+  // 頂点のクリッピング座標値
+  gl_Position = ftransform();
 }
 ```
 
@@ -214,7 +214,7 @@ void main()
 
 void main ()
 {
-  // フラグメントの色を固定で赤（R: 1.0, G: 0.0, B: 0.0, A: 1.0）にする
+  // フラグメントの色
   gl_FragColor = vec4(1.0, 0.0, 0.0, 1.0);
 }
 ```
